@@ -1,0 +1,130 @@
+# Cursor Rules - White-Label Appointment Booking Agent
+
+## Project Context
+This is a white-label, multi-tenant appointment booking SaaS for agencies to brand, resell, and monetize. Target buyers are agencies and resellers, NOT end users.
+
+## Tech Stack
+- Frontend: Next.js (React) + Tailwind CSS
+- Backend: Supabase (PostgreSQL + Auth + Edge Functions)
+- Payments: Stripe
+- Calendar: Google Calendar OAuth
+- Deployment: Vercel
+
+## Code Guidelines
+
+### General
+- Follow the product spec strictly - no scope creep
+- Prefer simple, boring solutions over complex ones
+- Write code that a buyer can understand and maintain
+- Every database query must be tenant-scoped
+- UI should be demo-ready and screenshot-friendly
+
+### TypeScript
+- Use strict TypeScript throughout
+- Define types for all API responses
+- Use enums for roles, statuses, and constants
+
+### Database
+- Always use Row Level Security (RLS)
+- Every query must filter by tenant_id
+- Store OAuth tokens encrypted
+- Use parameterized queries only
+
+### API Routes
+- Validate all inputs server-side
+- Return consistent error formats
+- Check user role before operations
+- Handle edge cases (double booking, race conditions)
+
+### Frontend
+- Use Tailwind CSS for styling
+- Create reusable components
+- Add loading states for async operations
+- Show clear error/success messages
+
+### Security
+- Never log sensitive data (tokens, passwords)
+- Verify webhook signatures
+- Use HTTPS everywhere
+- Implement RBAC at API level
+
+## File Structure
+```
+app/           - Next.js App Router pages
+components/    - React components
+lib/           - Utilities (supabase, stripe, calendar, email)
+types/         - TypeScript definitions
+hooks/         - React hooks
+```
+
+## Out of Scope (Do Not Build)
+- AI chatbots
+- WhatsApp automation
+- CRM functionality
+- Payment collection from customers
+- Mobile apps
+
+## Key Entities
+- tenants: Agencies (multi-tenant root)
+- users: All users with role and tenant_id
+- clients: Businesses under each tenant
+- calendar_accounts: Google OAuth tokens
+- appointments: Booked appointments
+- subscriptions: Stripe subscription data
+
+## User Roles
+- agency_owner: Creates clients, manages branding
+- client_admin: Connects calendar, manages availability
+- staff: View-only appointment access
+
+## Success Criteria
+1. Agency can onboard a client
+2. Client can connect calendar
+3. Public booking works end-to-end
+4. Stripe subscription can be activated
+5. White-label branding is visible
+
+## Environment Variables
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- GOOGLE_OAUTH_CLIENT_ID
+- GOOGLE_OAUTH_SECRET
+- SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
+
+## Agent Handoff Protocol (CRITICAL)
+
+**FIRST ACTION**: Always read `CONTEXT_HANDOFF.md` before doing ANY work.
+
+**LAST ACTION**: Always update `CONTEXT_HANDOFF.md` before ending session.
+
+### Before Starting Work
+1. Read CONTEXT_HANDOFF.md - contains current state
+2. Check "What To Do Next" section
+3. Note any blockers or decisions
+
+### After Completing Work
+1. Update CONTEXT_HANDOFF.md:
+   - Quick Status table
+   - "What Was Just Done" section
+   - "What To Do Next" section
+   - Session Notes
+2. Update COMPLETION_STATUS.md if tasks completed
+3. Commit with clear message
+
+### If Context Lost
+1. Read white_label_appointment_booking_agent_full_product_spec.md
+2. Read CLAUDE.md
+3. Read CONTEXT_HANDOFF.md
+4. Continue from "What To Do Next"
+
+## Reference Files
+| File | Purpose | Priority |
+|------|---------|----------|
+| CONTEXT_HANDOFF.md | Current state & next steps | READ FIRST |
+| TASKS.md | Phase-wise task breakdown | Planning |
+| COMPLETION_STATUS.md | Progress tracking | Status check |
+| CLAUDE.md | Full app context | Deep context |
+| white_label_...spec.md | Original product spec | Requirements |
