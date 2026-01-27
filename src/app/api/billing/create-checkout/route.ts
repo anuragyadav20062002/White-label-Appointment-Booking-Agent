@@ -1,30 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiError, createApiResponse, ErrorCodes } from '@/lib/utils/api'
-import Stripe from 'stripe'
-
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) {
-    throw new Error('STRIPE_SECRET_KEY is not configured')
-  }
-  return new Stripe(key, {
-    apiVersion: '2025-12-15.clover',
-  })
-}
-
-function getPriceIds() {
-  return {
-    basic: process.env.STRIPE_PRICE_BASIC || '',
-    pro: process.env.STRIPE_PRICE_PRO || '',
-    agency: process.env.STRIPE_PRICE_AGENCY || '',
-  }
-}
+import { createCheckout, getVariantIds, PlanKey } from '@/lib/lemonsqueezy'
 
 export async function POST(request: NextRequest) {
   try {
-    const stripe = getStripe()
-    const PRICE_IDS = getPriceIds()
+    const VARIANT_IDS = getVariantIds()
 
     const supabase = await createClient()
 
@@ -39,7 +20,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { plan } = body
 
-    if (!plan || !PRICE_IDS[plan as keyof typeof PRICE_IDS]) {
+    if (!plan || !VARIANT_IDS[plan as PlanKey]) {
       return NextResponse.json(
         createApiError(ErrorCodes.VALIDATION_ERROR, 'Invalid plan'),
         { status: 400 }
@@ -62,49 +43,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for existing subscription
-    const { data: existingSubRaw } = await supabase
-      .from('subscriptions')
-      .select('stripe_customer_id')
-      .eq('tenant_id', userData.tenant_id)
-      .single()
-
-    const existingSubscription = existingSubRaw as { stripe_customer_id: string } | null
-    let customerId = existingSubscription?.stripe_customer_id
-
-    // Create customer if doesn't exist
-    if (!customerId || customerId.startsWith('pending_')) {
-      const customer = await stripe.customers.create({
-        email: userData.email,
-        metadata: {
-          tenant_id: userData.tenant_id,
-          user_id: user.id,
-        },
-      })
-      customerId = customer.id
-    }
-
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      mode: 'subscription',
-      line_items: [
-        {
-          price: PRICE_IDS[plan as keyof typeof PRICE_IDS],
-          quantity: 1,
-        },
-      ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?canceled=true`,
-      subscription_data: {
-        metadata: {
-          tenant_id: userData.tenant_id,
-          plan,
-        },
+    // Create LemonSqueezy checkout
+    const { checkoutUrl } = await createCheckout({
+      variantId: VARIANT_IDS[plan as PlanKey],
+      customData: {
+        tenant_id: userData.tenant_id,
+        user_id: user.id,
+        plan: plan,
       },
+      customerEmail: userData.email,
+      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true`,
+      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?canceled=true`,
     })
 
-    return NextResponse.json(createApiResponse({ url: session.url }))
+    return NextResponse.json(createApiResponse({ url: checkoutUrl }))
   } catch (error) {
     console.error('Create checkout error:', error)
     return NextResponse.json(

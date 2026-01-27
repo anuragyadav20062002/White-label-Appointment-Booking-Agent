@@ -229,12 +229,12 @@
 
 ---
 
-## Phase 10: Stripe Subscription Billing
+## Phase 10: LemonSqueezy Subscription Billing
 **Goal**: Implement subscription management
 
-### 10.1 Stripe Setup
-- [ ] Create Stripe products and prices
-- [ ] Configure Stripe webhook endpoint
+### 10.1 LemonSqueezy Setup
+- [ ] Create LemonSqueezy products and prices
+- [ ] Configure LemonSqueezy webhook endpoint
 - [ ] Implement webhook signature verification
 
 ### 10.2 Billing API Routes
@@ -337,14 +337,14 @@
 ### 14.3 Production Deployment
 - [ ] Deploy to Vercel
 - [ ] Configure production Supabase
-- [ ] Set up production Stripe
+- [ ] Set up production LemonSqueezy
 - [ ] Configure production domain
 
 ### 14.4 Success Criteria Validation
 - [ ] Agency can onboard a client
 - [ ] Client can connect calendar
 - [ ] Public booking works end-to-end
-- [ ] Stripe subscription can be activated
+- [ ] LemonSqueezy subscription can be activated
 - [ ] White-label branding is visible
 
 ---

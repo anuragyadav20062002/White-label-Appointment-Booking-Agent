@@ -155,7 +155,7 @@ export default function BillingPage() {
                   </p>
                 )}
               </div>
-              {subscription.stripe_subscription_id && !subscription.stripe_subscription_id.startsWith('trial_') && (
+              {subscription.lemonsqueezy_subscription_id && !subscription.lemonsqueezy_subscription_id.startsWith('trial_') && (
                 <Button variant="outline" onClick={handleManageBilling} isLoading={isProcessing}>
                   Manage Billing
                 </Button>

@@ -1,166 +1,166 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import {
+  getLemonSqueezyConfig,
+  verifyWebhookSignature,
+  mapLemonSqueezyStatus,
+  getPlanFromVariantId,
+} from '@/lib/lemonsqueezy'
 
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) {
-    throw new Error('STRIPE_SECRET_KEY is not configured')
+// LemonSqueezy webhook event types
+interface LemonSqueezyWebhookEvent {
+  meta: {
+    event_name: string
+    custom_data?: {
+      tenant_id?: string
+      user_id?: string
+      plan?: string
+    }
   }
-  return new Stripe(key, {
-    apiVersion: '2025-12-15.clover',
-  })
+  data: {
+    id: string
+    type: string
+    attributes: {
+      store_id: number
+      customer_id: number
+      order_id: number
+      subscription_id?: number
+      variant_id: number
+      status: string
+      renews_at?: string
+      ends_at?: string | null
+      created_at: string
+      updated_at: string
+      cancelled?: boolean
+    }
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const stripe = getStripe()
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+    const { webhookSecret } = getLemonSqueezyConfig()
 
-    if (!webhookSecret) {
-      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
-    }
-
-    const body = await request.text()
-    const signature = request.headers.get('stripe-signature')
+    const rawBody = await request.text()
+    const signature = request.headers.get('x-signature')
 
     if (!signature) {
       return NextResponse.json({ error: 'No signature' }, { status: 400 })
     }
 
-    let event: Stripe.Event
-
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err)
+    // Verify webhook signature
+    const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret)
+    if (!isValid) {
+      console.error('Webhook signature verification failed')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
+    const event: LemonSqueezyWebhookEvent = JSON.parse(rawBody)
     const supabase = createAdminClient()
 
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
+    const eventName = event.meta.event_name
+    const customData = event.meta.custom_data
 
-        if (session.subscription && session.metadata?.tenant_id) {
-          // Get subscription details
-          const subscriptionResponse = await stripe.subscriptions.retrieve(
-            session.subscription as string
-          )
-          // Cast to proper type to access properties
-          const subscription = subscriptionResponse as unknown as {
-            id: string
-            status: string
-            metadata?: { plan?: string }
-            current_period_start: number
-            current_period_end: number
-            cancel_at_period_end: boolean
-          }
-
-          // Update database
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supabase as any)
-            .from('subscriptions')
-            .upsert({
-              tenant_id: session.metadata.tenant_id,
-              stripe_subscription_id: subscription.id,
-              stripe_customer_id: session.customer as string,
-              plan: (subscription.metadata?.plan as 'basic' | 'pro' | 'agency') || 'basic',
-              status: subscription.status === 'active' ? 'active' : 'trialing',
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              cancel_at_period_end: subscription.cancel_at_period_end,
-            }, {
-              onConflict: 'tenant_id',
-            })
+    switch (eventName) {
+      case 'subscription_created': {
+        const tenantId = customData?.tenant_id
+        if (!tenantId) {
+          console.error('No tenant_id in subscription_created event')
+          break
         }
-        break
-      }
 
-      case 'customer.subscription.updated': {
-        const subData = event.data.object as unknown as {
-          id: string
-          status: Stripe.Subscription.Status
-          metadata?: { tenant_id?: string; plan?: string }
-          current_period_start: number
-          current_period_end: number
-          cancel_at_period_end: boolean
-        }
-        const tenantId = subData.metadata?.tenant_id
-
-        if (tenantId) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supabase as any)
-            .from('subscriptions')
-            .update({
-              status: mapStripeStatus(subData.status),
-              plan: (subData.metadata?.plan as 'basic' | 'pro' | 'agency') || 'basic',
-              current_period_start: new Date(subData.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subData.current_period_end * 1000).toISOString(),
-              cancel_at_period_end: subData.cancel_at_period_end,
-            })
-            .eq('stripe_subscription_id', subData.id)
-        }
-        break
-      }
-
-      case 'customer.subscription.deleted': {
-        const deletedSub = event.data.object as unknown as { id: string }
+        const attrs = event.data.attributes
+        const plan = customData?.plan || getPlanFromVariantId(String(attrs.variant_id))
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any)
           .from('subscriptions')
-          .update({ status: 'cancelled' })
-          .eq('stripe_subscription_id', deletedSub.id)
+          .upsert({
+            tenant_id: tenantId,
+            lemonsqueezy_subscription_id: String(attrs.subscription_id),
+            lemonsqueezy_customer_id: String(attrs.customer_id),
+            plan: plan,
+            status: mapLemonSqueezyStatus(attrs.status),
+            current_period_start: attrs.created_at,
+            current_period_end: attrs.renews_at || null,
+            cancel_at_period_end: attrs.cancelled || false,
+          }, {
+            onConflict: 'tenant_id',
+          })
         break
       }
 
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as unknown as { subscription?: string }
+      case 'subscription_updated': {
+        const attrs = event.data.attributes
+        const subscriptionId = String(attrs.subscription_id || event.data.id)
 
-        if (invoice.subscription) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supabase as any)
-            .from('subscriptions')
-            .update({ status: 'past_due' })
-            .eq('stripe_subscription_id', invoice.subscription)
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('subscriptions')
+          .update({
+            status: mapLemonSqueezyStatus(attrs.status),
+            current_period_end: attrs.renews_at || null,
+            cancel_at_period_end: attrs.cancelled || false,
+          })
+          .eq('lemonsqueezy_subscription_id', subscriptionId)
         break
       }
 
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as unknown as { subscription?: string }
+      case 'subscription_cancelled':
+      case 'subscription_expired': {
+        const attrs = event.data.attributes
+        const subscriptionId = String(attrs.subscription_id || event.data.id)
 
-        if (invoice.subscription) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supabase as any)
-            .from('subscriptions')
-            .update({ status: 'active' })
-            .eq('stripe_subscription_id', invoice.subscription)
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('subscriptions')
+          .update({
+            status: 'cancelled',
+            cancel_at_period_end: true,
+          })
+          .eq('lemonsqueezy_subscription_id', subscriptionId)
         break
       }
+
+      case 'subscription_payment_failed': {
+        const attrs = event.data.attributes
+        const subscriptionId = String(attrs.subscription_id || event.data.id)
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('subscriptions')
+          .update({ status: 'past_due' })
+          .eq('lemonsqueezy_subscription_id', subscriptionId)
+        break
+      }
+
+      case 'subscription_payment_success': {
+        const attrs = event.data.attributes
+        const subscriptionId = String(attrs.subscription_id || event.data.id)
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('subscriptions')
+          .update({
+            status: 'active',
+            current_period_end: attrs.renews_at || null,
+          })
+          .eq('lemonsqueezy_subscription_id', subscriptionId)
+        break
+      }
+
+      case 'order_created': {
+        // Order created - subscription will be created separately
+        console.log('Order created:', event.data.id)
+        break
+      }
+
+      default:
+        console.log('Unhandled LemonSqueezy event:', eventName)
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error('Webhook error:', error)
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
-  }
-}
-
-function mapStripeStatus(status: Stripe.Subscription.Status): 'active' | 'cancelled' | 'past_due' | 'trialing' | 'incomplete' {
-  switch (status) {
-    case 'active':
-      return 'active'
-    case 'canceled':
-      return 'cancelled'
-    case 'past_due':
-      return 'past_due'
-    case 'trialing':
-      return 'trialing'
-    default:
-      return 'incomplete'
   }
 }

@@ -73,7 +73,7 @@
 - **APIs**: Edge Functions / Node.js
 
 ### External Services
-- **Payments**: Stripe
+- **Payments**: LemonSqueezy (Merchant of Record)
 - **Calendar**: Google Calendar (OAuth)
 - **Email**: SMTP provider
 
@@ -88,7 +88,7 @@ users           - All users with role and tenant_id
 clients         - Businesses under each tenant
 calendar_accounts - Google OAuth tokens
 appointments    - Booked appointments
-subscriptions   - Stripe subscription data
+subscriptions   - LemonSqueezy subscription data
 availability_rules - Client booking rules
 ```
 
@@ -125,7 +125,8 @@ availability_rules - Client booking rules
 
 ### Billing
 - `POST /api/billing/create-checkout` - Start checkout
-- `POST /api/billing/webhook` - Stripe webhooks
+- `POST /api/billing/webhook` - LemonSqueezy webhooks
+- `POST /api/billing/portal` - Customer portal
 
 ---
 
@@ -137,10 +138,13 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# Stripe
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+# LemonSqueezy (Payments)
+LEMONSQUEEZY_API_KEY=
+LEMONSQUEEZY_STORE_ID=
+LEMONSQUEEZY_WEBHOOK_SECRET=
+LEMONSQUEEZY_VARIANT_BASIC=
+LEMONSQUEEZY_VARIANT_PRO=
+LEMONSQUEEZY_VARIANT_AGENCY=
 
 # Google OAuth
 GOOGLE_OAUTH_CLIENT_ID=
@@ -150,8 +154,8 @@ GOOGLE_OAUTH_SECRET=
 SMTP_HOST=
 SMTP_PORT=
 SMTP_USER=
-SMTP_PASSWORD=
-EMAIL_FROM=
+SMTP_PASS=
+SMTP_FROM=
 
 # App
 NEXT_PUBLIC_APP_URL=
@@ -212,7 +216,7 @@ The product is complete when:
 1. An agency can onboard a client
 2. Client can connect their calendar
 3. Public booking works end-to-end
-4. Stripe subscription can be activated
+4. LemonSqueezy subscription can be activated
 5. White-label branding is visible
 
 ---
@@ -249,7 +253,7 @@ The product is complete when:
 │   └── dashboard/        # Dashboard components
 ├── lib/                   # Utilities
 │   ├── supabase/         # Supabase client
-│   ├── stripe/           # Stripe utilities
+│   ├── lemonsqueezy/     # LemonSqueezy utilities
 │   ├── calendar/         # Google Calendar
 │   └── email/            # Email utilities
 ├── types/                 # TypeScript types
@@ -288,7 +292,7 @@ The product is complete when:
 | Framework | Next.js 14+ |
 | Database | Supabase PostgreSQL |
 | Auth | Supabase Auth |
-| Payments | Stripe |
+| Payments | LemonSqueezy |
 | Calendar | Google Calendar API |
 | Styling | Tailwind CSS |
 | Deployment | Vercel |

@@ -17,7 +17,7 @@
 | 7 | Availability System | **COMPLETED** | 100% |
 | 8 | Booking System | **COMPLETED** | 100% |
 | 9 | Email Notifications | **COMPLETED** | 100% |
-| 10 | Stripe Billing | **COMPLETED** | 100% |
+| 10 | LemonSqueezy Billing | **COMPLETED** | 100% |
 | 11 | White-Label Features | **COMPLETED** | 100% |
 | 12 | Testing & QA | In Progress | 50% |
 | 13 | Documentation | In Progress | 30% |
@@ -57,7 +57,7 @@
 | Create clients table | Done | With booking_slug and timezone |
 | Create calendar_accounts table | Done | OAuth token storage |
 | Create appointments table | Done | With status enum |
-| Create subscriptions table | Done | Stripe integration |
+| Create subscriptions table | Done | LemonSqueezy integration |
 | Create availability_rules table | Done | Day of week availability |
 | Create client_settings table | Done | Booking configuration |
 | Enable RLS | Done | All tables secured |
@@ -164,13 +164,13 @@
 
 ---
 
-### Phase 10: Stripe Billing
+### Phase 10: LemonSqueezy Billing
 **Status**: COMPLETED
 **Last Updated**: 2025-01-27
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Stripe products setup | Done | Basic, Pro, Agency plans |
+| LemonSqueezy products setup | Done | Basic, Pro, Agency plans |
 | Checkout session | Done | /api/billing/create-checkout |
 | Webhook handling | Done | /api/billing/webhook |
 | Subscription sync | Done | Status updates via webhooks |
@@ -228,7 +228,7 @@
 | Task | Status | Notes |
 |------|--------|-------|
 | Build passing | Done | TypeScript and build OK |
-| Lazy Stripe initialization | Done | Avoids build-time errors |
+| Lazy LemonSqueezy initialization | Done | Avoids build-time errors |
 | Environment validation | Done | Proper error messages |
 | Security considerations | Done | RLS policies, API auth |
 | Production deployment | Pending | Ready for Vercel |
@@ -250,7 +250,7 @@
 - [x] Client management (CRUD operations)
 - [x] Client can connect calendar (Google OAuth)
 - [x] Public booking works (booking page + API)
-- [x] Stripe subscription integration
+- [x] LemonSqueezy subscription integration
 - [x] White-label branding visible
 - [x] Email notifications configured
 - [x] Build passes successfully
@@ -262,8 +262,8 @@
 - Using Next.js 16.1.5 with Turbopack
 - Tailwind CSS v4 with @tailwindcss/postcss
 - Supabase types use explicit casting due to generic type inference issues
-- Stripe API version: 2025-12-15.clover
-- Stripe clients use lazy initialization to avoid build-time errors
+- LemonSqueezy API version: 2025-12-15.clover
+- LemonSqueezy clients use lazy initialization to avoid build-time errors
 - Dynamic rendering enabled for booking pages
 
 ---

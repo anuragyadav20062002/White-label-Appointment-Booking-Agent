@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('subscriptions').insert({
       tenant_id: tenant.id,
-      stripe_subscription_id: `trial_${tenant.id}`,
-      stripe_customer_id: `pending_${tenant.id}`,
+      lemonsqueezy_subscription_id: `trial_${tenant.id}`,
+      lemonsqueezy_customer_id: `pending_${tenant.id}`,
       plan: 'basic',
       status: 'trialing',
       current_period_start: new Date().toISOString(),

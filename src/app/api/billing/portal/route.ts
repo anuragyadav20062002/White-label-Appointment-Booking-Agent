@@ -1,21 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { createApiError, createApiResponse, ErrorCodes } from '@/lib/utils/api'
-import Stripe from 'stripe'
-
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) {
-    throw new Error('STRIPE_SECRET_KEY is not configured')
-  }
-  return new Stripe(key, {
-    apiVersion: '2025-12-15.clover',
-  })
-}
+import { getCustomerPortalUrl } from '@/lib/lemonsqueezy'
 
 export async function POST() {
   try {
-    const stripe = getStripe()
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -45,26 +34,23 @@ export async function POST() {
     // Get subscription
     const { data: subscriptionRaw } = await supabase
       .from('subscriptions')
-      .select('stripe_customer_id')
+      .select('lemonsqueezy_customer_id')
       .eq('tenant_id', userData.tenant_id)
       .single()
 
-    const subscription = subscriptionRaw as { stripe_customer_id: string } | null
+    const subscription = subscriptionRaw as { lemonsqueezy_customer_id: string } | null
 
-    if (!subscription?.stripe_customer_id || subscription.stripe_customer_id.startsWith('pending_')) {
+    if (!subscription?.lemonsqueezy_customer_id || subscription.lemonsqueezy_customer_id.startsWith('pending_')) {
       return NextResponse.json(
         createApiError(ErrorCodes.NOT_FOUND, 'No active subscription'),
         { status: 404 }
       )
     }
 
-    // Create portal session
-    const session = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
-    })
+    // Get customer portal URL from LemonSqueezy
+    const portalUrl = await getCustomerPortalUrl(subscription.lemonsqueezy_customer_id)
 
-    return NextResponse.json(createApiResponse({ url: session.url }))
+    return NextResponse.json(createApiResponse({ url: portalUrl }))
   } catch (error) {
     console.error('Create portal error:', error)
     return NextResponse.json(

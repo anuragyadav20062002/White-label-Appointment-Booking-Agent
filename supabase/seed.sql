@@ -86,7 +86,7 @@ VALUES
     );
 
 -- Demo Subscription (Active trial)
-INSERT INTO subscriptions (tenant_id, stripe_subscription_id, stripe_customer_id, plan, status, current_period_start, current_period_end)
+INSERT INTO subscriptions (tenant_id, lemonsqueezy_subscription_id, lemonsqueezy_customer_id, plan, status, current_period_start, current_period_end)
 VALUES (
     'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     'sub_demo_123',

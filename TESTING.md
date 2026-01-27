@@ -80,11 +80,11 @@
 | 6.3 | Verify calendar event deleted | Event removed from calendar | Pending |
 | 6.4 | Verify cancellation email | Emails sent to customer & client | Pending |
 
-#### Flow 7: Stripe Subscription
+#### Flow 7: LemonSqueezy Subscription
 | Step | Action | Expected Result | Status |
 |------|--------|-----------------|--------|
 | 7.1 | Navigate to billing page | Pricing plans shown | Pending |
-| 7.2 | Select plan | Stripe checkout opens | Pending |
+| 7.2 | Select plan | LemonSqueezy checkout opens | Pending |
 | 7.3 | Complete payment (test card) | Payment succeeds | Pending |
 | 7.4 | Verify webhook received | Subscription created in DB | Pending |
 | 7.5 | Verify plan features unlocked | Access granted correctly | Pending |
@@ -217,7 +217,7 @@ Client Admin:
   password: Client123!
 ```
 
-### Stripe Test Cards
+### LemonSqueezy Test Cards
 ```
 Success: 4242 4242 4242 4242
 Decline: 4000 0000 0000 0002
@@ -257,7 +257,7 @@ Before Flippa listing, ALL must pass:
 | Agency can onboard a client | 1.*, 2.* | Pending |
 | Client can connect calendar | 3.* | Pending |
 | Public booking works end-to-end | 5.* | Pending |
-| Stripe subscription can be activated | 7.* | Pending |
+| LemonSqueezy subscription can be activated | 7.* | Pending |
 | White-label branding is visible | 8.* | Pending |
 
 ---
