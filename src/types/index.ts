@@ -144,8 +144,8 @@ export interface Appointment {
 export interface Subscription {
   id: string
   tenant_id: string
-  lemonsqueezy_subscription_id: string
-  lemonsqueezy_customer_id: string
+  razorpay_subscription_id: string
+  razorpay_customer_id: string
   plan: SubscriptionPlan
   status: SubscriptionStatus
   current_period_start: string

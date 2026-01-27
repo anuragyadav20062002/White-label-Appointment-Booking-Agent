@@ -73,7 +73,7 @@
 - **APIs**: Edge Functions / Node.js
 
 ### External Services
-- **Payments**: LemonSqueezy (Merchant of Record)
+- **Payments**: Razorpay (Indian Payment Gateway)
 - **Calendar**: Google Calendar (OAuth)
 - **Email**: SMTP provider
 
@@ -88,7 +88,7 @@ users           - All users with role and tenant_id
 clients         - Businesses under each tenant
 calendar_accounts - Google OAuth tokens
 appointments    - Booked appointments
-subscriptions   - LemonSqueezy subscription data
+subscriptions   - Razorpay subscription data
 availability_rules - Client booking rules
 ```
 
@@ -125,7 +125,7 @@ availability_rules - Client booking rules
 
 ### Billing
 - `POST /api/billing/create-checkout` - Start checkout
-- `POST /api/billing/webhook` - LemonSqueezy webhooks
+- `POST /api/billing/webhook` - Razorpay webhooks
 - `POST /api/billing/portal` - Customer portal
 
 ---
@@ -138,13 +138,13 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# LemonSqueezy (Payments)
-LEMONSQUEEZY_API_KEY=
-LEMONSQUEEZY_STORE_ID=
-LEMONSQUEEZY_WEBHOOK_SECRET=
-LEMONSQUEEZY_VARIANT_BASIC=
-LEMONSQUEEZY_VARIANT_PRO=
-LEMONSQUEEZY_VARIANT_AGENCY=
+# Razorpay (Payments)
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+RAZORPAY_PLAN_BASIC=
+RAZORPAY_PLAN_PRO=
+RAZORPAY_PLAN_AGENCY=
 
 # Google OAuth
 GOOGLE_OAUTH_CLIENT_ID=
@@ -216,7 +216,7 @@ The product is complete when:
 1. An agency can onboard a client
 2. Client can connect their calendar
 3. Public booking works end-to-end
-4. LemonSqueezy subscription can be activated
+4. Razorpay subscription can be activated
 5. White-label branding is visible
 
 ---
@@ -253,7 +253,7 @@ The product is complete when:
 │   └── dashboard/        # Dashboard components
 ├── lib/                   # Utilities
 │   ├── supabase/         # Supabase client
-│   ├── lemonsqueezy/     # LemonSqueezy utilities
+│   ├── razorpay/         # Razorpay utilities
 │   ├── calendar/         # Google Calendar
 │   └── email/            # Email utilities
 ├── types/                 # TypeScript types
@@ -292,7 +292,7 @@ The product is complete when:
 | Framework | Next.js 14+ |
 | Database | Supabase PostgreSQL |
 | Auth | Supabase Auth |
-| Payments | LemonSqueezy |
+| Payments | Razorpay |
 | Calendar | Google Calendar API |
 | Styling | Tailwind CSS |
 | Deployment | Vercel |

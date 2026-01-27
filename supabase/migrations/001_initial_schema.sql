@@ -127,8 +127,8 @@ CREATE TABLE appointments (
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE UNIQUE,
-    lemonsqueezy_subscription_id VARCHAR(255) NOT NULL UNIQUE,
-    lemonsqueezy_customer_id VARCHAR(255) NOT NULL,
+    razorpay_subscription_id VARCHAR(255) NOT NULL UNIQUE,
+    razorpay_customer_id VARCHAR(255) NOT NULL,
     plan subscription_plan NOT NULL DEFAULT 'basic',
     status subscription_status NOT NULL DEFAULT 'incomplete',
     current_period_start TIMESTAMPTZ,
@@ -152,7 +152,7 @@ CREATE INDEX idx_appointments_status ON appointments(status);
 CREATE INDEX idx_appointments_customer_email ON appointments(customer_email);
 CREATE INDEX idx_availability_rules_client_id ON availability_rules(client_id);
 CREATE INDEX idx_subscriptions_tenant_id ON subscriptions(tenant_id);
-CREATE INDEX idx_subscriptions_lemonsqueezy_id ON subscriptions(lemonsqueezy_subscription_id);
+CREATE INDEX idx_subscriptions_razorpay_id ON subscriptions(razorpay_subscription_id);
 
 -- ============================================
 -- FUNCTIONS
