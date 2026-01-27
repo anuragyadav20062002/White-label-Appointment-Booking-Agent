@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiError, createApiResponse, ErrorCodes } from '@/lib/utils/api'
-import { createCheckout, getVariantIds, PlanKey } from '@/lib/lemonsqueezy'
+import { createSubscription, getPlanIds, PlanKey } from '@/lib/razorpay'
 
 export async function POST(request: NextRequest) {
   try {
-    const VARIANT_IDS = getVariantIds()
+    const PLAN_IDS = getPlanIds()
 
     const supabase = await createClient()
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { plan } = body
 
-    if (!plan || !VARIANT_IDS[plan as PlanKey]) {
+    if (!plan || !PLAN_IDS[plan as PlanKey]) {
       return NextResponse.json(
         createApiError(ErrorCodes.VALIDATION_ERROR, 'Invalid plan'),
         { status: 400 }
@@ -43,20 +43,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create LemonSqueezy checkout
-    const { checkoutUrl } = await createCheckout({
-      variantId: VARIANT_IDS[plan as PlanKey],
-      customData: {
+    // Create Razorpay subscription
+    const { subscriptionId, shortUrl } = await createSubscription({
+      planId: PLAN_IDS[plan as PlanKey],
+      customerEmail: userData.email,
+      notes: {
         tenant_id: userData.tenant_id,
         user_id: user.id,
         plan: plan,
       },
-      customerEmail: userData.email,
-      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?canceled=true`,
     })
 
-    return NextResponse.json(createApiResponse({ url: checkoutUrl }))
+    // Store the pending subscription ID for webhook to match
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from('subscriptions')
+      .update({
+        razorpay_subscription_id: subscriptionId,
+        plan: plan,
+        status: 'incomplete',
+      })
+      .eq('tenant_id', userData.tenant_id)
+
+    return NextResponse.json(createApiResponse({ url: shortUrl }))
   } catch (error) {
     console.error('Create checkout error:', error)
     return NextResponse.json(

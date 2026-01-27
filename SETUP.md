@@ -9,7 +9,7 @@ This guide walks you through setting up all required services and deploying the 
 1. [Prerequisites](#prerequisites)
 2. [Environment Variables Overview](#environment-variables-overview)
 3. [Supabase Setup](#1-supabase-setup)
-4. [LemonSqueezy Setup](#2-lemonsqueezy-setup)
+4. [Razorpay Setup](#2-razorpay-setup)
 5. [Google OAuth Setup](#3-google-oauth-setup)
 6. [Email (SMTP) Setup](#4-email-smtp-setup)
 7. [Local Development](#5-local-development)
@@ -35,13 +35,13 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# LemonSqueezy (Payments)
-LEMONSQUEEZY_API_KEY=your-api-key
-LEMONSQUEEZY_STORE_ID=your-store-id
-LEMONSQUEEZY_WEBHOOK_SECRET=your-webhook-secret
-LEMONSQUEEZY_VARIANT_BASIC=variant-id
-LEMONSQUEEZY_VARIANT_PRO=variant-id
-LEMONSQUEEZY_VARIANT_AGENCY=variant-id
+# Razorpay (Payments)
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
+RAZORPAY_KEY_SECRET=your-key-secret
+RAZORPAY_WEBHOOK_SECRET=your-webhook-secret
+RAZORPAY_PLAN_BASIC=plan_xxxxxxxxxxxx
+RAZORPAY_PLAN_PRO=plan_xxxxxxxxxxxx
+RAZORPAY_PLAN_AGENCY=plan_xxxxxxxxxxxx
 
 # Google OAuth (Calendar)
 GOOGLE_OAUTH_CLIENT_ID=xxxxx.apps.googleusercontent.com
@@ -124,64 +124,68 @@ supabase db push
 
 ---
 
-## 2. LemonSqueezy Setup
+## 2. Razorpay Setup
 
-LemonSqueezy is a Merchant of Record - they handle all payment processing, taxes, and compliance globally. Works from any country including India.
+Razorpay is an Indian payment gateway that allows individual developers to accept payments with just a PAN card - no business registration required.
 
 ### Step 1: Create Account
 
-1. Go to [lemonsqueezy.com](https://lemonsqueezy.com) and sign up
-2. Complete your store setup (add payout details)
+1. Go to [razorpay.com](https://razorpay.com) and sign up
+2. Complete KYC with your PAN card and bank account details
+3. Wait for account activation (usually 1-2 business days)
 
-### Step 2: Get API Key
+### Step 2: Get API Keys
 
-1. Go to **Settings** → **API**
-2. Click **Create API Key**
-3. Give it a name and click **Create**
-4. Copy the key → `LEMONSQUEEZY_API_KEY`
+1. Go to **Settings** → **API Keys**
+2. Click **Generate Key** (or view existing keys)
+3. Copy:
+   - **Key ID** → `RAZORPAY_KEY_ID` (starts with `rzp_test_` or `rzp_live_`)
+   - **Key Secret** → `RAZORPAY_KEY_SECRET`
 
-### Step 3: Get Store ID
+> **Note**: Use test keys (`rzp_test_`) for development, live keys (`rzp_live_`) for production.
 
-1. Go to **Settings** → **Stores**
-2. Click on your store
-3. Copy the **Store ID** from the URL or settings → `LEMONSQUEEZY_STORE_ID`
+### Step 3: Create Subscription Plans
 
-### Step 4: Create Products
+1. Go to **Products** → **Plans**
+2. Click **Create Plan**
 
-1. Go to **Products** → **New Product**
-
-2. Create **Basic Plan**:
+3. Create **Basic Plan**:
    - Name: `Basic`
-   - Price: `$29/month` (recurring)
-   - Click **Create product**
-   - Go to **Variants** tab
-   - Copy the **Variant ID** → `LEMONSQUEEZY_VARIANT_BASIC`
+   - Period: `monthly`
+   - Amount: `240000` (₹2,400 in paise)
+   - Click **Create Plan**
+   - Copy the **Plan ID** → `RAZORPAY_PLAN_BASIC`
 
-3. Create **Pro Plan**:
+4. Create **Pro Plan**:
    - Name: `Pro`
-   - Price: `$79/month` (recurring)
-   - Copy Variant ID → `LEMONSQUEEZY_VARIANT_PRO`
+   - Period: `monthly`
+   - Amount: `650000` (₹6,500 in paise)
+   - Copy the **Plan ID** → `RAZORPAY_PLAN_PRO`
 
-4. Create **Agency Plan**:
+5. Create **Agency Plan**:
    - Name: `Agency`
-   - Price: `$199/month` (recurring)
-   - Copy Variant ID → `LEMONSQUEEZY_VARIANT_AGENCY`
+   - Period: `monthly`
+   - Amount: `1650000` (₹16,500 in paise)
+   - Copy the **Plan ID** → `RAZORPAY_PLAN_AGENCY`
 
-### Step 5: Set Up Webhook
+### Step 4: Set Up Webhook
 
 1. Go to **Settings** → **Webhooks**
-2. Click **Add Webhook**
-3. Set **URL**: `https://your-app.vercel.app/api/billing/webhook`
-4. Select events:
-   - `subscription_created`
-   - `subscription_updated`
-   - `subscription_cancelled`
-   - `subscription_expired`
-   - `subscription_payment_failed`
-   - `subscription_payment_success`
-   - `order_created`
-5. Click **Save webhook**
-6. Copy the **Signing secret** → `LEMONSQUEEZY_WEBHOOK_SECRET`
+2. Click **Add New Webhook**
+3. Set **Webhook URL**: `https://your-app.vercel.app/api/billing/webhook`
+4. Select **Active Events**:
+   - `subscription.authenticated`
+   - `subscription.activated`
+   - `subscription.charged`
+   - `subscription.pending`
+   - `subscription.halted`
+   - `subscription.cancelled`
+   - `subscription.paused`
+   - `subscription.resumed`
+   - `payment.captured`
+   - `payment.failed`
+5. Click **Create Webhook**
+6. Copy the **Secret** → `RAZORPAY_WEBHOOK_SECRET`
 
 ### For Local Testing
 
@@ -200,6 +204,11 @@ ngrok http 3000
 # Copy the HTTPS URL and use it for webhooks
 # Example: https://abc123.ngrok.io/api/billing/webhook
 ```
+
+### Test Mode vs Live Mode
+
+- **Test Mode**: Use `rzp_test_` keys. Card: `4111 1111 1111 1111`, any future expiry, any CVV
+- **Live Mode**: Use `rzp_live_` keys after completing full KYC verification
 
 ---
 
@@ -385,12 +394,12 @@ In Vercel project settings, add ALL environment variables:
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Your service role key |
-| `LEMONSQUEEZY_API_KEY` | Your LemonSqueezy API key |
-| `LEMONSQUEEZY_STORE_ID` | Your store ID |
-| `LEMONSQUEEZY_WEBHOOK_SECRET` | Your webhook secret |
-| `LEMONSQUEEZY_VARIANT_BASIC` | Basic plan variant ID |
-| `LEMONSQUEEZY_VARIANT_PRO` | Pro plan variant ID |
-| `LEMONSQUEEZY_VARIANT_AGENCY` | Agency plan variant ID |
+| `RAZORPAY_KEY_ID` | Your Razorpay Key ID |
+| `RAZORPAY_KEY_SECRET` | Your Razorpay Key Secret |
+| `RAZORPAY_WEBHOOK_SECRET` | Your webhook secret |
+| `RAZORPAY_PLAN_BASIC` | Basic plan ID |
+| `RAZORPAY_PLAN_PRO` | Pro plan ID |
+| `RAZORPAY_PLAN_AGENCY` | Agency plan ID |
 | `GOOGLE_OAUTH_CLIENT_ID` | Google client ID |
 | `GOOGLE_OAUTH_SECRET` | Google client secret |
 | `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` |
@@ -415,7 +424,7 @@ After deployment, update these URLs with your Vercel domain:
    - Site URL: `https://your-app.vercel.app`
    - Redirect URLs: `https://your-app.vercel.app/auth/callback`
 
-2. **LemonSqueezy** → Webhooks
+2. **Razorpay** → Webhooks
    - Update endpoint URL: `https://your-app.vercel.app/api/billing/webhook`
 
 3. **Google Cloud** → Credentials → OAuth Client
@@ -481,12 +490,13 @@ Use [cron-job.org](https://cron-job.org) or similar:
 - Verify Supabase URL Configuration
 - Check redirect URLs match exactly
 
-### LemonSqueezy Webhooks Failing
+### Razorpay Webhooks Failing
 
 - Verify webhook secret is correct
 - Check endpoint URL is correct
-- Ensure all events are selected
+- Ensure all subscription events are selected
 - Check Vercel function logs for errors
+- Test with Razorpay's test mode first
 
 ### Calendar Connection Fails
 
@@ -523,22 +533,24 @@ openssl rand -hex 32
 | Service | Dashboard URL |
 |---------|--------------|
 | Supabase | [supabase.com/dashboard](https://supabase.com/dashboard) |
-| LemonSqueezy | [app.lemonsqueezy.com](https://app.lemonsqueezy.com) |
+| Razorpay | [dashboard.razorpay.com](https://dashboard.razorpay.com) |
 | Google Cloud | [console.cloud.google.com](https://console.cloud.google.com) |
 | Vercel | [vercel.com/dashboard](https://vercel.com/dashboard) |
 | Resend | [resend.com/emails](https://resend.com/emails) |
 
 ---
 
-## Why LemonSqueezy?
+## Why Razorpay?
 
-LemonSqueezy is a **Merchant of Record** which means:
-- **Works globally** - Accept payments from anywhere, sell from anywhere (including India)
-- **Handles taxes** - They manage VAT, GST, sales tax automatically
-- **Compliance included** - No need to worry about payment regulations
-- **Easy setup** - No complex business entity requirements
-- **Popular with SaaS** - Trusted by indie hackers and SaaS founders worldwide
-- **Transferable** - Easy to transfer to new owner when selling on Flippa
+Razorpay is **India's leading payment gateway** which means:
+- **Easy KYC** - Individual developers can sign up with just PAN card (no business registration)
+- **Works for Indians** - Perfect for solo developers and small businesses in India
+- **International cards** - Accepts Visa, Mastercard, Amex from anywhere in the world
+- **Subscription support** - Built-in recurring billing with Plans and Subscriptions
+- **UPI & Wallets** - Supports UPI, Paytm, PhonePe, and other Indian payment methods
+- **Quick payouts** - T+2 settlement to your bank account
+- **Trusted** - Powers payments for 8M+ businesses in India
+- **Great documentation** - Well-documented APIs and SDKs
 
 ---
 

@@ -11,14 +11,16 @@ const PLANS = [
   {
     id: 'basic',
     name: 'Basic',
-    price: 29,
+    price: 2400,
+    priceDisplay: '₹2,400',
     description: 'For small businesses',
     features: ['Up to 3 clients', 'Basic booking', 'Email notifications'],
   },
   {
     id: 'pro',
     name: 'Pro',
-    price: 79,
+    price: 6500,
+    priceDisplay: '₹6,500',
     description: 'For growing agencies',
     features: ['Up to 10 clients', 'Calendar sync', 'Custom branding', 'Priority support'],
     popular: true,
@@ -26,7 +28,8 @@ const PLANS = [
   {
     id: 'agency',
     name: 'Agency',
-    price: 199,
+    price: 16500,
+    priceDisplay: '₹16,500',
     description: 'For large agencies',
     features: ['Unlimited clients', 'Full white-label', 'API access', 'Dedicated support'],
   },
@@ -155,7 +158,7 @@ export default function BillingPage() {
                   </p>
                 )}
               </div>
-              {subscription.lemonsqueezy_subscription_id && !subscription.lemonsqueezy_subscription_id.startsWith('trial_') && (
+              {subscription.razorpay_subscription_id && !subscription.razorpay_subscription_id.startsWith('trial_') && (
                 <Button variant="outline" onClick={handleManageBilling} isLoading={isProcessing}>
                   Manage Billing
                 </Button>
@@ -189,7 +192,7 @@ export default function BillingPage() {
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
-                  <span className="text-3xl font-bold">${plan.price}</span>
+                  <span className="text-3xl font-bold">{plan.priceDisplay}</span>
                   <span className="text-gray-500">/month</span>
                 </div>
                 <ul className="space-y-2 mb-6">
