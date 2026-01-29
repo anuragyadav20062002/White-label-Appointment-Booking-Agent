@@ -40,6 +40,9 @@ export function getPlanIds() {
   }
 }
 
+// Trial period in days (0 = no trial)
+export const TRIAL_DAYS = 14
+
 // Plans with pricing (in INR for India)
 // Note: You can adjust pricing to USD if needed
 export const PLANS = {
@@ -50,6 +53,7 @@ export const PLANS = {
     priceDisplay: '₹2,400',
     features: ['Up to 3 clients', 'Basic booking', 'Email notifications'],
     planId: process.env.RAZORPAY_PLAN_BASIC || '',
+    trialDays: TRIAL_DAYS,
   },
   pro: {
     name: 'Pro',
@@ -58,6 +62,7 @@ export const PLANS = {
     priceDisplay: '₹6,500',
     features: ['Up to 10 clients', 'Calendar sync', 'Custom branding', 'Priority support'],
     planId: process.env.RAZORPAY_PLAN_PRO || '',
+    trialDays: TRIAL_DAYS,
   },
   agency: {
     name: 'Agency',
@@ -66,6 +71,7 @@ export const PLANS = {
     priceDisplay: '₹16,500',
     features: ['Unlimited clients', 'Full white-label', 'API access', 'Dedicated support'],
     planId: process.env.RAZORPAY_PLAN_AGENCY || '',
+    trialDays: TRIAL_DAYS,
   },
 }
 
@@ -107,12 +113,22 @@ export async function createSubscription(params: {
   customerPhone?: string
   notes: Record<string, string>
   notifyUrl?: string
+  trialDays?: number
 }): Promise<{ subscriptionId: string; shortUrl: string }> {
   interface SubscriptionResponse {
     id: string
     short_url: string
     customer_id: string
     status: string
+  }
+
+  // Calculate trial end date (start_at delays first charge)
+  const trialDays = params.trialDays ?? TRIAL_DAYS
+  let startAt: number | undefined
+  if (trialDays > 0) {
+    const trialEndDate = new Date()
+    trialEndDate.setDate(trialEndDate.getDate() + trialDays)
+    startAt = Math.floor(trialEndDate.getTime() / 1000) // Unix timestamp
   }
 
   // If no customer exists, Razorpay will create one
@@ -128,6 +144,7 @@ export async function createSubscription(params: {
         notify_email: params.customerEmail,
         notify_phone: params.customerPhone || '',
       },
+      ...(startAt && { start_at: startAt }), // Delays first charge = trial period
     }),
   })
 

@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from '@/types'
 
+const TRIAL_DAYS = 14
+
 const PLANS = [
   {
     id: 'basic',
@@ -15,6 +17,7 @@ const PLANS = [
     priceDisplay: '₹2,400',
     description: 'For small businesses',
     features: ['Up to 3 clients', 'Basic booking', 'Email notifications'],
+    trialDays: TRIAL_DAYS,
   },
   {
     id: 'pro',
@@ -24,6 +27,7 @@ const PLANS = [
     description: 'For growing agencies',
     features: ['Up to 10 clients', 'Calendar sync', 'Custom branding', 'Priority support'],
     popular: true,
+    trialDays: TRIAL_DAYS,
   },
   {
     id: 'agency',
@@ -32,6 +36,7 @@ const PLANS = [
     priceDisplay: '₹16,500',
     description: 'For large agencies',
     features: ['Unlimited clients', 'Full white-label', 'API access', 'Dedicated support'],
+    trialDays: TRIAL_DAYS,
   },
 ]
 
@@ -191,10 +196,15 @@ export default function BillingPage() {
                 <CardDescription>{plan.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4">
+                <div className="mb-2">
                   <span className="text-3xl font-bold">{plan.priceDisplay}</span>
                   <span className="text-gray-500">/month</span>
                 </div>
+                {plan.trialDays > 0 && !subscription && (
+                  <p className="text-sm text-green-600 font-medium mb-4">
+                    {plan.trialDays}-day free trial
+                  </p>
+                )}
                 <ul className="space-y-2 mb-6">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm">
@@ -215,7 +225,9 @@ export default function BillingPage() {
                   {subscription?.plan === plan.id && subscription?.status === 'active'
                     ? 'Current Plan'
                     : subscription?.status === 'trialing'
-                    ? 'Start Plan'
+                    ? 'Upgrade Now'
+                    : plan.trialDays > 0
+                    ? 'Start Free Trial'
                     : 'Subscribe'}
                 </Button>
               </CardContent>
