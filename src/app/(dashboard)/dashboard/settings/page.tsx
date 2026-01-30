@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -149,6 +149,7 @@ export default function SettingsPage() {
     'Europe/London',
     'Europe/Paris',
     'Europe/Berlin',
+    'Asia/Kolkata',
     'Asia/Tokyo',
     'Asia/Shanghai',
     'Asia/Dubai',
@@ -230,7 +231,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setTenantSettings({ ...tenantSettings, timezone: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 bg-white"
             >
               {timezones.map((tz) => (
                 <option key={tz} value={tz}>

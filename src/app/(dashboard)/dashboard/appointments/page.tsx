@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
@@ -18,15 +18,20 @@ interface AppointmentWithClient extends Appointment {
 }
 
 export default function AppointmentsPage() {
-  const { tenant } = useAuth()
+  const { tenant, isLoading: authLoading } = useAuth()
   const [appointments, setAppointments] = useState<AppointmentWithClient[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming')
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchAppointments = async () => {
-      if (!tenant?.id) return
+      if (authLoading) return
+
+      if (!tenant?.id) {
+        setIsLoading(false)
+        return
+      }
 
       const now = new Date().toISOString()
       let query = supabase
@@ -59,7 +64,7 @@ export default function AppointmentsPage() {
     }
 
     fetchAppointments()
-  }, [tenant?.id, filter, supabase])
+  }, [tenant?.id, filter, authLoading, supabase])
 
   const updateAppointmentStatus = async (id: string, newStatus: AppointmentStatus) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
