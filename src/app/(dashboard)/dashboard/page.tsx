@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/use-auth'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 
@@ -15,14 +15,19 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { user, tenant } = useAuth()
+  const { user, tenant, isLoading: authLoading } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!tenant?.id) return
+      if (authLoading) return
+
+      if (!tenant?.id) {
+        setIsLoading(false)
+        return
+      }
 
       try {
         // Get total clients
@@ -85,7 +90,7 @@ export default function DashboardPage() {
     }
 
     fetchStats()
-  }, [tenant?.id, supabase])
+  }, [tenant?.id, authLoading, supabase])
 
   if (isLoading) {
     return (

@@ -17,6 +17,7 @@ const timezones = [
   'Europe/London',
   'Europe/Paris',
   'Europe/Berlin',
+  'Asia/Kolkata',
   'Asia/Tokyo',
   'Asia/Shanghai',
   'Asia/Dubai',
@@ -132,7 +133,7 @@ export default function NewClientPage() {
                 name="timezone"
                 value={formData.timezone}
                 onChange={handleChange}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 text-gray-900 bg-white"
               >
                 {timezones.map((tz) => (
                   <option key={tz} value={tz}>

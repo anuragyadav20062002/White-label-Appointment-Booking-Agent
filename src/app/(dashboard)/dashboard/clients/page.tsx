@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
@@ -9,14 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Client } from '@/types'
 
 export default function ClientsPage() {
-  const { tenant } = useAuth()
+  const { tenant, isLoading: authLoading } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchClients = async () => {
-      if (!tenant?.id) return
+      if (authLoading) return
+
+      if (!tenant?.id) {
+        setIsLoading(false)
+        return
+      }
 
       const { data, error } = await supabase
         .from('clients')
@@ -33,7 +38,7 @@ export default function ClientsPage() {
     }
 
     fetchClients()
-  }, [tenant?.id, supabase])
+  }, [tenant?.id, authLoading, supabase])
 
   if (isLoading) {
     return (
